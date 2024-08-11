@@ -1,0 +1,40 @@
+{% extends "empty_page.html" %}
+{% block content %}
+
+    <div class="container">
+        <h2 class="mt-3">Create a new s(h)elf</h2>
+        {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+        <form method="post" action="/users/register/">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="jobtype">Type de job</label>
+                <select class="form-control" id="jobtype">
+                    <option>Bureau</option>
+                    <option>Cisailleur</option>
+                    <option>Coupeur</option>
+                    <option>Soudeur</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="quantity" class="form-label">Nombre de personnes</label>
+                <input type="text" class="form-control" id="firstname" name="firstname" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+        </form>
+    </div>
+{%endblock%}

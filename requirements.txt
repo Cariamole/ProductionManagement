@@ -1,0 +1,8 @@
+fastapi~=0.111.1
+jinja2
+uvicorn~=0.30.3
+pydantic~=2.8.2
+sqlalchemy~=2.0.31
+starlette~=0.37.2
+PyJWT~=2.9.0
+passlib~=1.7.4
