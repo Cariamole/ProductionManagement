@@ -19,7 +19,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 passwordContext = CryptContext(schemes=["bcrypt"], deprecated="auto")
 router = APIRouter(prefix="/user", tags=["user"])
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="app/templates")
 
 
 class Token(BaseModel):
@@ -34,10 +34,7 @@ class TokenData(BaseModel):
 class UserBase(BaseModel):
     username: str
     email: str
-    firstname: str
-    name: str
-    admin: bool
-
+    job: str
 
 class UserInDB(UserBase):
     hashed_password: str
@@ -55,11 +52,11 @@ def get_password_hash(password):
 
 
 def get_user(db: Session, username: str):
-    return db.query(models.Users).filter(models.Users.username == username).first()
+    return db.query(models.User).filter(models.User.username == username).first()
 
 
-def authenticate_user(db: Session, usermame: str, password: str):
-    user = get_user(db, usermame)
+def authenticate_user(db: Session, username: str, password: str):
+    user = get_user(db, username)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -123,7 +120,7 @@ async def get_current_user_from_cookie(
 
 @router.get("/register/", response_class=HTMLResponse)
 async def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse("user_register.html", {"request": request})
 
 
 @router.post("/register/")
@@ -132,25 +129,27 @@ async def register_user(
         username: str = Form(...),
         password: str = Form(...),
         email: str = Form(...),
-        name: str = Form(...),
-        firstname: str = Form(...),
+        job: str = Form(...),
         db: Session = Depends(get_db)):
     existing_user = get_user(db, username)
     if existing_user:
-        return templates.TemplateResponse("register.html", {"request": request, "error": "Username already taken"})
+        return templates.TemplateResponse("user_register.html", {"request": request, "error": "Username déjà utilisé"})
     hashed_password = get_password_hash(password)
 
-    new_user = models.Users(username=username, email=email, hashed_password=hashed_password, name=name,
-                            firstname=firstname)
+    new_user = models.User(username=username,
+                           email=email,
+                           hashed_password=hashed_password,
+                           job=job,
+                           lastJob=datetime.now())
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return RedirectResponse(url="/users/login/", status_code=303)
+    return RedirectResponse(url="/", status_code=303)
 
 
 @router.get("/login/", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse("user_login.html", {"request": request})
 
 
 @router.post("/login/", response_class=HTMLResponse)
@@ -161,73 +160,73 @@ async def login(request: Request,
                 ):
     user = authenticate_user(db, username, password)
     if not user:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Incorrect username or password"})
+        return templates.TemplateResponse("user_login.html", {"request": request, "error": "Incorrect username or password"})
     if not user.active:
-        return templates.TemplateResponse("login.html",
+        return templates.TemplateResponse("user_login.html",
                                           {"request": request, "error": "You’ve been disabled by an admin"})
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
-    response = RedirectResponse(url="/connected/", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(url="/connected/home", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)
     return response
 
 
-@router.get("/edit/{user_id}", response_class=HTMLResponse)
-async def edit_user(request: Request, user_id: int,
-                    current_user: models.Users = Depends(get_current_user_from_cookie)):
-    if current_user.id != user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-
-    return templates.TemplateResponse("connected_edit_user.html", {"request": request, "current_user": current_user})
-
-
-@router.post("/edit/{user_id}")
-async def update_user(
-        # username: str = Form(...),
-        email: str = Form(...),
-        name: str = Form(...),
-        firstname: str = Form(...),
-        db: Session = Depends(get_db),
-        current_user: models.Users = Depends(get_current_user_from_cookie)):
-    if not current_user:
-        raise HTTPException(status_code=404, detail="user not found")
-    # existing_user = db.query(models.Users).filter(models.Users.username == username).first()
-    # if existing_user is not None and existing_user.id != current_user.id:
-    #     raise HTTPException(status_code=400, detail="Username already taken")
-    current_user.name = name
-    current_user.firstname = firstname
-    current_user.email = email
-    db.commit()
-    return RedirectResponse(url="/connected/", status_code=303)
-
-
-@router.get("/password/", response_class=HTMLResponse)
-async def edit_password_page(request: Request,
-                             # user_id: int,
-                             current_user: models.Users = Depends(get_current_user_from_cookie)):
-    # if current_user.id != user_id:
-    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-
-    return templates.TemplateResponse("connected_edit_password.html",
-                                      {"request": request, "current_user": current_user})
-
-
-@router.post("/password/")
-async def update_password(
-        # username: str = Form(...),
-        current_password: str = Form(...),
-        new_password: str = Form(...),
-        confirm_password: str = Form(...),
-        db: Session = Depends(get_db),
-        current_user: models.Users = Depends(get_current_user_from_cookie)):
-    if not current_user:
-        raise HTTPException(status_code=400, detail="Wrong user")
-    if verify_password(current_password, get_password_hash(new_password)):
-        raise HTTPException(status_code=400, detail="Wrong password")
-    if new_password != confirm_password:
-        raise HTTPException(status_code=400, detail="Passwords not the same")
-
-    current_user.hashed_password = get_password_hash(new_password)
-    db.commit()
-    return RedirectResponse(url="/connected/", status_code=303)
+# @router.get("/edit/{user_id}", response_class=HTMLResponse)
+# async def edit_user(request: Request, user_id: int,
+#                     current_user: models.User = Depends(get_current_user_from_cookie)):
+#     if current_user.id != user_id:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+#
+#     return templates.TemplateResponse("connected_edit_user.html", {"request": request, "current_user": current_user})
+#
+#
+# @router.post("/edit/{user_id}")
+# async def update_user(
+#         # username: str = Form(...),
+#         email: str = Form(...),
+#         name: str = Form(...),
+#         firstname: str = Form(...),
+#         db: Session = Depends(get_db),
+#         current_user: models.Users = Depends(get_current_user_from_cookie)):
+#     if not current_user:
+#         raise HTTPException(status_code=404, detail="user not found")
+#     # existing_user = db.query(models.Users).filter(models.Users.username == username).first()
+#     # if existing_user is not None and existing_user.id != current_user.id:
+#     #     raise HTTPException(status_code=400, detail="Username already taken")
+#     current_user.name = name
+#     current_user.firstname = firstname
+#     current_user.email = email
+#     db.commit()
+#     return RedirectResponse(url="/connected/", status_code=303)
+#
+#
+# @router.get("/password/", response_class=HTMLResponse)
+# async def edit_password_page(request: Request,
+#                              # user_id: int,
+#                              current_user: models.Users = Depends(get_current_user_from_cookie)):
+#     # if current_user.id != user_id:
+#     #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+#
+#     return templates.TemplateResponse("connected_edit_password.html",
+#                                       {"request": request, "current_user": current_user})
+#
+#
+# @router.post("/password/")
+# async def update_password(
+#         # username: str = Form(...),
+#         current_password: str = Form(...),
+#         new_password: str = Form(...),
+#         confirm_password: str = Form(...),
+#         db: Session = Depends(get_db),
+#         current_user: models.Users = Depends(get_current_user_from_cookie)):
+#     if not current_user:
+#         raise HTTPException(status_code=400, detail="Wrong user")
+#     if verify_password(current_password, get_password_hash(new_password)):
+#         raise HTTPException(status_code=400, detail="Wrong password")
+#     if new_password != confirm_password:
+#         raise HTTPException(status_code=400, detail="Passwords not the same")
+#
+#     current_user.hashed_password = get_password_hash(new_password)
+#     db.commit()
+#     return RedirectResponse(url="/connected/", status_code=303)

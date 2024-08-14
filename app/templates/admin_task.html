@@ -1,0 +1,13 @@
+{% extends "connected_empty_page.html" %}
+{% block content %}
+<h1 class="mt-3">Accéder au différents type de tâche, {{current_user.username}}</h1>
+<div class="row">
+    <a href="/admin/task/finished" class="btn btn-primary">Voir les tâches finies</a>
+</div>
+<div class="row">
+    <a href="/admin/task/prebuild" class="btn btn-primary">Voir les tâches pré-construites</a>
+</div>
+<!--<div class="row">-->
+<!--    <a href="admin/task/ongoing" class="btn btn-primary">Voir les tâches en cours</a>-->
+<!--</div>-->
+{%endblock%}

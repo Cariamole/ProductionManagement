@@ -1,0 +1,154 @@
+{% extends "connected_empty_page.html" %}
+{% block content %}
+<div>
+    <h1>Toutes les tâches en cours</h1>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Fin de la coupe prévue</th>
+            <th>Fin du pliage prévu</th>
+            <th>Fin de la soudure prévue :</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for task in tasks %}
+            {% if task.estimatedSoudure > timeElapsed and task.soudureDoneBy > -1 %}
+                <tr>
+                    <td>{{ task.id }}</td>
+                    <td>{{ task.name }}</td>
+                    <td>{{ task.description }}</td>
+
+
+                    {% if task.coupeDoneBy >0 %}
+                        <td>
+                            {{ task.estimatedCoupe.strftime('%a, %d %b %H:%M') }}
+                            <button type="button" class="btn btn-success btn-coupe-fin" data-id="{{task.id}}"><i class="bi bi-check-circle-fill"></i>
+                            </button>
+                        </td>
+                    {% else %}
+                        <td>Coupe finie</td>
+                    {% endif %}
+                    {% if task.pliageDoneBy >0 %}
+                        <td>
+                            {{ task.estimatedPliage.strftime('%a, %d %b %H:%M') }}
+                            <button type="button" class="btn btn-success btn-pliage-fin" data-id="{{task.id}}"><i class="bi bi-check-circle-fill"></i>
+                            </button>
+                        </td>
+                    {% else %}
+                        <td>Pliage fini</td>
+                    {% endif %}
+                    {% if task.soudureDoneBy>0 %}
+                        <td>
+                            {{ task.estimatedSoudure.strftime('%a, %d %b %H:%M')  }}
+                            <button type="button" class="btn btn-success btn-soudure-fin" data-id="{{task.id}}"><i class="bi bi-check-circle-fill"></i>
+                            </button>
+                        </td>
+                    {% else %}
+                        <td>Soudure finie le {{ task.estimatedSoudure.strftime('%d %b %H:%M')  }}</td>
+                    {% endif %}
+                    {%if current_user.admin  or (task.soudureDoneBy == 0 and task.pliageDoneBy == 0 and task.pliageDoneBy == 0)%}
+                    <td>
+                        <button type="button" class="btn btn-danger btn-hide" data-id="{{task.id}}"><i class="bi-trash"></i>
+                        </button>
+                    </td>
+                    {%endif%}
+                </tr>
+            {% endif%}
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{%endblock%}
+{%block script%}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const sellButtons = document.querySelectorAll('.btn-coupe-fin');
+
+        sellButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-id');
+                fetch(`/task/finish_coupe/${taskId}`, {
+                    method: 'PUT',
+                })
+                .then(response => {
+                    if(response.ok) {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const sellButtons = document.querySelectorAll('.btn-pliage-fin');
+
+        sellButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-id');
+                fetch(`/task/finish_pliage/${taskId}`, {
+                    method: 'PUT',
+                })
+                .then(response => {
+                    if(response.ok) {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const sellButtons = document.querySelectorAll('.btn-soudure-fin');
+
+        sellButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-id');
+                fetch(`/task/finish_soudure/${taskId}`, {
+                    method: 'PUT',
+                })
+                .then(response => {
+                    if(response.ok) {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const hideButtons = document.querySelectorAll('.btn-hide');
+
+        hideButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-id');
+                fetch(`/task/hide/${taskId}`, {
+                    method: 'PUT',
+                })
+                .then(response => {
+                    if (response.status === 200) {
+                        this.closest('tr').remove();
+                    } else {
+                        alert(response.status)
+                        alert("Error whiiiiile deleting");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+</script>
+{%endblock%}

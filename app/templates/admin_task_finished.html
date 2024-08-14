@@ -1,0 +1,93 @@
+{% extends "connected_empty_page.html" %}
+{% block content %}
+<div>
+    <h1>Toutes les tâches finies</h1>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Fin de la tâche</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for task in tasks %}
+                <tr>
+                    <td>{{ task.id }}</td>
+                    <td>{{ task.name }}</td>
+                    <td>{{ task.description }}</td>
+                    <td>{{ task.estimatedSoudure.strftime('%d %b %H:%M')  }}</td>
+                    {%if not task.save%}
+                    <td>
+                        delete
+                        <button type="button" class="btn btn-danger btn-delete" data-id="{{task.id}}"><i class="bi-trash"></i>
+                        </button>
+                    </td>
+                    {%else%}
+                    <td>
+                        hide
+                        <button type="button" class="btn btn-danger btn-hide" data-id="{{task.id}}"><i class="bi-trash"></i>
+                        </button>
+                    </td>
+                    {%endif%}
+                </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{%endblock%}
+{%block script%}
+<script>
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const deleteButtons = document.querySelectorAll('.btn-delete');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-id');
+
+                // Envoyer une requête DELETE
+                fetch(`/task/delete/${taskId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => {
+                    if (response.status === 204) {
+                        this.closest('tr').remove();
+                    } else {
+                        alert("Error while deleting");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+
+
+document.addEventListener("DOMContentLoaded", function() {
+        const hideButtons = document.querySelectorAll('.btn-hide');
+
+        hideButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-id');
+                fetch(`/task/admin_hide/${taskId}`, {
+                    method: 'PUT',
+                })
+                .then(response => {
+                    if (response.status === 200) {
+                        this.closest('tr').remove();
+                    } else {
+                        alert(response.status)
+                        alert("Error whiiiiile deleting");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+</script>
+{%endblock%}

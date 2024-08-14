@@ -1,0 +1,47 @@
+{% extends "empty_page.html" %}
+{% block content %}
+<div>
+    <div>
+    <h1>Toutes les tâches en cours</h1>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Fin de la coupe prévue</th>
+            <th>Fin du pliage prévu</th>
+            <th>Fin de la soudure prévue</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for task in tasks %}
+        <tr>
+            <td>{{ task.id }}</td>
+            <td>{{ task.name }}</td>
+            <td>{{ task.description }}</td>
+
+            {% if task.coupeDoneBy > 0 %}
+                <td>{{ task.estimatedCoupe.strftime('%a, %d %b %H:%M') }}</td>
+            {% else %}
+                <td>Coupe finie</td>
+            {% endif %}
+
+            {% if task.pliageDoneBy %}
+                <td>{{ task.estimatedPliage.strftime('%a, %d %b %H:%M') }}</td>
+            {% else %}
+                <td>Pliage fini</td>
+            {% endif %}
+
+            {% if task.soudureDoneBy %}
+                <td>{{ task.estimatedSoudure.strftime('%a, %d %b %H:%M') }}</td>
+            {% else %}
+                <td>Soudure finie</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+{%endblock%}

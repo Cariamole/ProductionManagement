@@ -1,0 +1,67 @@
+{% extends "connected_empty_page.html" %}
+{% block content %}
+<div>
+    <h1>Mes tâches à réaliser</h1>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Nom</th>
+            <th>Description</th>
+            {%if current_user.job=="coupeur"%}
+                <th>Coupe à finir pour </th>
+            {%elif current_user.job=="plieur"%}
+                <th>Pliage à finir pour </th>
+            {%elif current_user.job=="soudeur"%}
+                <th>Soudure à finir pour </th>
+            {%endif%}
+        </tr>
+        </thead>
+        <tbody>
+        {% for task in tasks %}
+                <tr>
+                    <td>{{ task.id }}</td>
+                    <td>{{ task.name }}</td>
+                    <td>{{ task.description }}</td>
+                    <td>
+                        {%if current_user.job=="coupeur"%}
+                            {{ task.estimatedCoupe.strftime('%a, %d %b %H:%M')  }}
+                        <button type="button" class="btn btn-success btn-fin" data-id="{{task.id}}"><i class="bi bi-check2-square"></i></button>
+                        {%elif current_user.job=="plieur"%}
+                            {{ task.estimatedPliage.strftime('%a, %d %b %H:%M')  }}
+                        <button type="button" class="btn btn-success btn-fin" data-id="{{task.id}}"><i class="bi bi-check2-square"></i></button>
+                        {%elif current_user.job=="soudeur"%}
+                            {{ task.estimatedSoudure.strftime('%a, %d %b %H:%M')  }}
+                        <button type="button" class="btn btn-success btn-fin" data-id="{{task.id}}"><i class="bi bi-check2-square"></i></button>
+                        {%endif%}
+
+                    </td>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{%endblock%}
+{%block script%}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const sellButtons = document.querySelectorAll('.btn-fin');
+
+        sellButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-id');
+                fetch(`/task/finish_task/${taskId}`, {
+                    method: 'PUT',
+                })
+                .then(response => {
+                    if(response.ok) {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+</script>
+{%endblock%}

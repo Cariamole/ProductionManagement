@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
+    <title>{% block title %}Time management{% endblock %}</title>
+</head>
+<body>
+<div class="container">
+    <header class="row">
+        <div class="col">
+            <div class="btn-group mb-2">
+                <form action="/connected/logout" method="post">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+                <a href="/connected/home" class="btn btn-primary">Voir les tâches</a>
+                <a href="/task/create" class="btn btn-primary">Créer une tâche</a>
+                {%  if current_user.admin %}
+                    <a href="/admin/task" class="btn btn-primary">Voir toutes les tâches</a>
+                {% endif %}
+                <a href="/connected/mytask" class="btn btn-primary">Voir mes tâches</a>
+            </div>
+        </div>
+    </header>
+    <div class="row">
+        <section class="col">
+            <div class="row">
+                {% block content %}
+
+                {% endblock %}
+            </div>
+        </section>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const editButtons = document.querySelectorAll('.btn-editProfile');
+
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const userId = this.getAttribute('data-id');
+                window.location.href = `/users/edit/${userId}`;
+            });
+        });
+    });
+</script>
+{% block script%}
+{% endblock%}
+</body>
+</html>
